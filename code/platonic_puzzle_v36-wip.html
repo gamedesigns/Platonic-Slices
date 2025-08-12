@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platonic - Cube Puzzle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .header {
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .game-title {
+            font-size: 32px;
+            font-weight: 300;
+            color: #4a5568;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+        
+        .level-info {
+            font-size: 14px;
+            color: #718096;
+            opacity: 0.8;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            touch-action: none;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .instructions {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            text-align: center;
+            color: #718096;
+            font-size: 12px;
+            opacity: 0.7;
+            z-index: 100;
+        }
+        
+        .success-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: none;
+        }
+        
+        .success-title {
+            font-size: 24px;
+            color: #48bb78;
+            margin-bottom: 10px;
+        }
+        
+        .success-text {
+            color: #4a5568;
+            margin-bottom: 20px;
+        }
+        
+        .options-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: none;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            color: #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .option-group {
+            margin-bottom: 20px;
+        }
+        
+        .option-label {
+            display: block;
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .option-select, .option-range {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+        }
+        
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        .options-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <button class="options-btn" onclick="toggleOptionsModal()">⚙️</button>
+    
+    <div class="header">
+        <div class="game-title">PLATONIC</div>
+        <div class="level-info" id="levelInfo">Level 1 - 2 Slices</div>
+    </div>
+    
+    <div class="instructions">
+        Drag slices to rotate • Touch background to orbit • Two fingers to zoom • Restore the solid
+    </div>
+    
+    <div class="game-container" id="gameContainer"></div>
+    
+    <div class="controls">
+        <button class="btn" onclick="scramblePuzzle()">Scramble</button>
+        <button class="btn" onclick="cycleDifficulty()">Difficulty</button>
+        <button class="btn" onclick="nextLevel()">Next Level</button>
+        <button class="btn" onclick="resetLevel()">Reset</button>
+    </div>
+    
+    <div class="success-message" id="successMessage">
+        <div class="success-title">Perfect!</div>
+        <div class="success-text">Puzzle solved successfully!</div>
+        <button class="btn" onclick="nextLevel()">Continue</button>
+    </div>
+    
+    <div class="options-modal" id="optionsModal">
+        <div class="modal-title">Sandbox Options</div>
+        
+        <div class="option-group">
+            <label class="option-label">Platonic Solid</label>
+            <select class="option-select" id="solidType" onchange="updatePreview()">
+                <option value="cube">Cube</option>
+                <option value="tetrahedron">Tetrahedron</option>
+                <option value="octahedron">Octahedron</option>
+                <option value="dodecahedron">Dodecahedron</option>
+            </select>
+        </div>
+        
+        <div class="option-group">
+            <label class="option-label">Primary Slices</label>
+            <input type="range" class="option-range" id="primarySlices" min="2" max="8" value="2" oninput="updateSliceValue()">
+            <span class="range-value" id="sliceValue">2</span>
+        </div>
+        
+        <div class="option-group">
+            <label class="option-label">Perpendicular Cuts</label>
+            <select class="option-select" id="perpCuts">
+                <option value="0">None</option>
+                <option value="1">1 Cut</option>
+                <option value="2">2 Cuts</option>
+                <option value="3">3 Cuts</option>
+            </select>
+        </div>
+        
+        <div class="option-group">
+            <label class="option-label">Diagonal Cuts</label>
+            <select class="option-select" id="diagCuts">
+                <option value="0">None</option>
+                <option value="1">1 Cut</option>
+                <option value="2">2 Cuts</option>
+            </select>
+        </div>
+        
+        <div class="option-group">
+            <label class="option-label">Difficulty</label>
+            <select class="option-select" id="customDifficulty">
+                <option value="easy">Easy (45°)</option>
+                <option value="normal">Normal (30°)</option>
+                <option value="hard">Hard (15°)</option>
+            </select>
+        </div>
+        
+        <div class="option-group">
+            <label class="option-label">Show Color Guide</label>
+            <select class="option-select" id="colorGuide">
+                <option value="false">Off</option>
+                <option value="true">On</option>
+            </select>
+        </div>
+        
+        <div class="btn-row">
+            <button class="btn" onclick="applyCustomLevel()">Test Level</button>
+            <button class="btn" onclick="toggleOptionsModal()">Close</button>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game state
+        let scene, camera, renderer;
+        let cubeSlices = [];
+        let currentLevel = 1;
+        let isDragging = false;
+        let selectedSlice = null;
+        let mouseStart = { x: 0, y: 0 };
+        let cameraRotation = { x: 0.5, y: 0.5 };
+        let cameraDistance = 8;
+        let isComplete = false;
+        let pivotPoint;
+        let lastTouchDistance = 0;
+        let isZooming = false;
+        let difficultySettings = {
+            easy: { snapAngle: Math.PI/4, showColorSide: false, name: "Easy" },    // 45°
+            normal: { snapAngle: Math.PI/6, showColorSide: true, name: "Normal" }, // 30°
+            hard: { snapAngle: Math.PI/12, showColorSide: true, name: "Hard" }     // 15°
+        };
+        let currentDifficulty = 'easy';
+        let customMode = false;
+        let customOptions = {
+            solidType: 'cube',
+            primarySlices: 2,
+            perpCuts: 0,
+            diagCuts: 0,
+            difficulty: 'easy',
+            colorGuide: false
+        };
+        
+        // Level configurations
+        const levels = [
+            { slices: 2, color: 0x64b5f6, complementary: 0xff6b35, name: "Azure Cube" },
+            { slices: 3, color: 0x81c784, complementary: 0xc88184, name: "Jade Cube" },
+            { slices: 4, color: 0xffb74d, complementary: 0x4d7bff, name: "Amber Cube" },
+            { slices: 6, color: 0xf06292, complementary: 0x62f092, name: "Rose Cube" },
+            { slices: 8, color: 0xba68c8, complementary: 0x68c8ba, name: "Violet Cube" }
+        ];
+        
+        function init() {
+            const container = document.getElementById('gameContainer');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setClearColor(0x000000, 0);
+            container.appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            // Create pivot point for rotations
+            pivotPoint = new THREE.Group();
+            scene.add(pivotPoint);
+            
+            // Camera position
+            updateCameraPosition();
+            
+            // Event listeners
+            setupEventListeners();
+            
+            // Start first level
+            createLevel(currentLevel);
+        }
+        
+        function updateCameraPosition() {
+            camera.position.x = cameraDistance * Math.cos(cameraRotation.x) * Math.sin(cameraRotation.y);
+            camera.position.y = cameraDistance * Math.sin(cameraRotation.x);
+            camera.position.z = cameraDistance * Math.cos(cameraRotation.x) * Math.cos(cameraRotation.y);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function setupEventListeners() {
+            const container = document.getElementById('gameContainer');
+            
+            container.addEventListener('mousedown', onPointerDown, false);
+            container.addEventListener('mousemove', onPointerMove, false);
+            container.addEventListener('mouseup', onPointerUp, false);
+            container.addEventListener('touchstart', onPointerDown, false);
+            container.addEventListener('touchmove', onPointerMove, false);
+            container.addEventListener('touchend', onPointerUp, false);
+            
+            window.addEventListener('resize', onWindowResize, false);
+        }
+        
+        function createLevel(levelNum) {
+            // Clear previous level
+            while(pivotPoint.children.length > 0) {
+                pivotPoint.remove(pivotPoint.children[0]);
+            }
+            cubeSlices.length = 0;
+            isComplete = false;
+            
+            if (customMode) {
+                createCustomLevel();
+            } else {
+                createStandardLevel(levelNum);
+            }
+            
+            // Scramble after creation
+            setTimeout(() => scramblePuzzle(), 500);
+        }
+        
+        function createStandardLevel(levelNum) {
+            const levelConfig = levels[(levelNum - 1) % levels.length];
+            const sliceCount = levelConfig.slices;
+            const cubeColor = levelConfig.color;
+            const complementaryColor = levelConfig.complementary;
+            const difficulty = difficultySettings[currentDifficulty];
+            
+            // Update UI
+            document.getElementById('levelInfo').textContent = `Level ${levelNum} - ${sliceCount} Slices (${difficulty.name})`;
+            
+            createCubeSlices(sliceCount, cubeColor, complementaryColor, difficulty.showColorSide);
+        }
+        
+        function createCustomLevel() {
+            const opts = customOptions;
+            const levelConfig = levels[0]; // Use first color scheme
+            const difficulty = difficultySettings[opts.difficulty];
+            
+            document.getElementById('levelInfo').textContent = `Custom: ${opts.solidType} - ${opts.primarySlices} slices`;
+            
+            switch(opts.solidType) {
+                case 'cube':
+                    createCubeSlices(opts.primarySlices, levelConfig.color, levelConfig.complementary, opts.colorGuide);
+                    break;
+                case 'tetrahedron':
+                    createTetrahedron(opts.primarySlices, levelConfig.color, levelConfig.complementary, opts.colorGuide);
+                    break;
+                case 'octahedron':
+                    createOctahedron(opts.primarySlices, levelConfig.color, levelConfig.complementary, opts.colorGuide);
+                    break;
+                case 'dodecahedron':
+                    createDodecahedron(opts.primarySlices, levelConfig.color, levelConfig.complementary, opts.colorGuide);
+                    break;
+            }
+            
+            // Add perpendicular cuts if specified
+            if (opts.perpCuts > 0) {
+                addPerpendicularCuts(opts.perpCuts);
+            }
+            
+            // Add diagonal cuts if specified
+            if (opts.diagCuts > 0) {
+                addDiagonalCuts(opts.diagCuts);
+            }
+        }
+        
+        function createCubeSlices(sliceCount, cubeColor, complementaryColor, showColorSide) {
+            const sliceHeight = 2 / sliceCount;
+            
+            for (let i = 0; i < sliceCount; i++) {
+                const geometry = new THREE.BoxGeometry(2, sliceHeight, 2);
+                
+                // Create materials array for different faces
+                const materials = [];
+                for (let face = 0; face < 6; face++) {
+                    let faceColor = cubeColor;
+                    
+                    // Color the front face (index 4) with complementary color if enabled
+                    if (face === 4 && showColorSide) {
+                        faceColor = complementaryColor;
+                    }
+                    
+                    materials.push(new THREE.MeshPhongMaterial({ 
+                        color: faceColor,
+                        transparent: true,
+                        opacity: 0.85
+                    }));
+                }
+                
+                const slice = new THREE.Mesh(geometry, materials);
+                addWireframe(slice);
+                
+                const sliceGroup = new THREE.Group();
+                const yPos = (i - sliceCount/2 + 0.5) * sliceHeight;
+                slice.position.y = yPos;
+                
+                sliceGroup.add(slice);
+                pivotPoint.add(sliceGroup);
+                
+                cubeSlices.push({
+                    group: sliceGroup,
+                    mesh: slice,
+                    targetRotation: 0,
+                    currentRotation: 0,
+                    index: i,
+                    type: 'primary'
+                });
+            }
+        }
+        
+        function createTetrahedron(sliceCount, color, complementaryColor, showColorSide) {
+            const geometry = new THREE.TetrahedronGeometry(1.5);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.85
+            });
+            
+            // For tetrahedron, create simple rotation puzzle around Y-axis
+            for (let i = 0; i < sliceCount; i++) {
+                const tetra = new THREE.Mesh(geometry.clone(), material.clone());
+                addWireframe(tetra);
+                
+                const sliceGroup = new THREE.Group();
+                const angle = (i / sliceCount) * Math.PI * 2;
+                tetra.position.set(Math.cos(angle) * 0.5, 0, Math.sin(angle) * 0.5);
+                
+                sliceGroup.add(tetra);
+                pivotPoint.add(sliceGroup);
+                
+                cubeSlices.push({
+                    group: sliceGroup,
+                    mesh: tetra,
+                    targetRotation: 0,
+                    currentRotation: 0,
+                    index: i,
+                    type: 'primary'
+                });
+            }
+        }
+        
+        function createOctahedron(sliceCount, color, complementaryColor, showColorSide) {
+            const geometry = new THREE.OctahedronGeometry(1.2);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.85
+            });
+            
+            const sliceHeight = 2.4 / sliceCount;
+            
+            for (let i = 0; i < sliceCount; i++) {
+                const octa = new THREE.Mesh(geometry.clone(), material.clone());
+                addWireframe(octa);
+                
+                const sliceGroup = new THREE.Group();
+                const yPos = (i - sliceCount/2 + 0.5) * sliceHeight;
+                octa.position.y = yPos;
+                octa.scale.set(1, sliceHeight/2.4, 1);
+                
+                sliceGroup.add(octa);
+                pivotPoint.add(sliceGroup);
+                
+                cubeSlices.push({
+                    group: sliceGroup,
+                    mesh: octa,
+                    targetRotation: 0,
+                    currentRotation: 0,
+                    index: i,
+                    type: 'primary'
+                });
+            }
+        }
+        
+        function createDodecahedron(sliceCount, color, complementaryColor, showColorSide) {
+            const geometry = new THREE.DodecahedronGeometry(1.0);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.85
+            });
+            
+            const sliceHeight = 2 / sliceCount;
+            
+            for (let i = 0; i < sliceCount; i++) {
+                const dodeca = new THREE.Mesh(geometry.clone(), material.clone());
+                addWireframe(dodeca);
+                
+                const sliceGroup = new THREE.Group();
+                const yPos = (i - sliceCount/2 + 0.5) * sliceHeight;
+                dodeca.position.y = yPos;
+                dodeca.scale.set(1, sliceHeight/2, 1);
+                
+                sliceGroup.add(dodeca);
+                pivotPoint.add(sliceGroup);
+                
+                cubeSlices.push({
+                    group: sliceGroup,
+                    mesh: dodeca,
+                    targetRotation: 0,
+                    currentRotation: 0,
+                    index: i,
+                    type: 'primary'
+                });
+            }
+        }
+        
+        function addWireframe(mesh) {
+            const wireframe = new THREE.EdgesGeometry(mesh.geometry);
+            const wireframeMaterial = new THREE.LineBasicMaterial({ 
+                color: 0xffffff, 
+                opacity: 0.4, 
+                transparent: true 
+            });
+            const edges = new THREE.LineSegments(wireframe, wireframeMaterial);
+            mesh.add(edges);
+        }
+        
+        function addPerpendicularCuts(cutCount) {
+            const baseColor = levels[0].color;
+            const compColor = levels[1].color; // Use different color for perp cuts
+            
+            for (let c = 0; c < cutCount; c++) {
+                const geometry = new THREE.BoxGeometry(2, 2, 0.2);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: compColor,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                
+                const perpSlice = new THREE.Mesh(geometry, material);
+                addWireframe(perpSlice);
+                
+                const sliceGroup = new THREE.Group();
+                const zPos = (c - cutCount/2 + 0.5) * 0.4;
+                perpSlice.position.z = zPos;
+                
+                // Perpendicular cuts rotate around X-axis
+                sliceGroup.add(perpSlice);
+                pivotPoint.add(sliceGroup);
+                
+                cubeSlices.push({
+                    group: sliceGroup,
+                    mesh: perpSlice,
+                    targetRotation: 0,
+                    currentRotation: 0,
+                    index: cubeSlices.length,
+                    type: 'perpendicular',
+                    axis: 'x'
+                });
+            }
+        }
+        
+        function addDiagonalCuts(cutCount) {
+            const diagColor = levels[2].color; // Use third color for diagonal cuts
+            
+            for (let c = 0; c < cutCount; c++) {
+                const geometry = new THREE.BoxGeometry(2.8, 0.2, 2.8);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: diagColor,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                
+                const diagSlice = new THREE.Mesh(geometry, material);
+                addWireframe(diagSlice);
+                
+                const sliceGroup = new THREE.Group();
+                const yPos = (c - cutCount/2 + 0.5) * 0.4;
+                diagSlice.position.y = yPos;
+                diagSlice.rotation.z = Math.PI / 4; // 45-degree diagonal
+                
+                sliceGroup.add(diagSlice);
+                pivotPoint.add(sliceGroup);
+                
+                cubeSlices.push({
+                    group: sliceGroup,
+                    mesh: diagSlice,
+                    targetRotation: 0,
+                    currentRotation: 0,
+                    index: cubeSlices.length,
+                    type: 'diagonal',
+                    axis: 'z'
+                });
+            }
+        }
+        
+        function scramblePuzzle() {
+            if (isComplete) return;
+            
+            const difficulty = difficultySettings[currentDifficulty];
+            const snapAngle = difficulty.snapAngle;
+            
+            cubeSlices.forEach((slice, index) => {
+                if (slice && slice.group) {
+                    // Generate random rotation in multiples of snap angle
+                    const maxRotations = Math.round(Math.PI * 2 / snapAngle);
+                    const possibleRotations = [];
+                    for (let i = 1; i < maxRotations; i++) { // Start from 1 to exclude 0 rotation
+                        possibleRotations.push(i * snapAngle);
+                    }
+                    
+                    // Pick random rotation
+                    const randomRotation = possibleRotations[Math.floor(Math.random() * possibleRotations.length)];
+                    
+                    // Animate to scrambled position for better visual feedback
+                    setTimeout(() => {
+                        if (slice.type === 'perpendicular' && slice.axis === 'x') {
+                            slice.group.rotation.x = randomRotation;
+                        } else if (slice.type === 'diagonal' && slice.axis === 'z') {
+                            slice.group.rotation.z = randomRotation;
+                        } else {
+                            slice.group.rotation.y = randomRotation;
+                        }
+                        slice.currentRotation = randomRotation;
+                    }, index * 100);
+                }
+            });
+        }
+        
+        function getIntersectedSlice(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2();
+            
+            let clientX, clientY;
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+            
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const meshes = cubeSlices.map(slice => slice.mesh).filter(mesh => mesh);
+            const intersects = raycaster.intersectObjects(meshes);
+            
+            if (intersects.length > 0) {
+                // Find which slice this mesh belongs to
+                for (let slice of cubeSlices) {
+                    if (slice && slice.mesh === intersects[0].object) {
+                        return slice;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        function onPointerDown(event) {
+            event.preventDefault();
+            if (isComplete) return;
+            
+            // Handle two-finger zoom
+            if (event.touches && event.touches.length === 2) {
+                isZooming = true;
+                isDragging = false;
+                lastTouchDistance = getTouchDistance(event.touches);
+                return;
+            }
+            
+            isDragging = true;
+            isZooming = false;
+            
+            let clientX, clientY;
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+            
+            mouseStart.x = clientX;
+            mouseStart.y = clientY;
+            
+            selectedSlice = getIntersectedSlice(event);
+            
+            if (selectedSlice && selectedSlice.mesh) {
+                // Highlight selected slice
+                if (Array.isArray(selectedSlice.mesh.material)) {
+                    selectedSlice.mesh.material.forEach(material => {
+                        if (material) {
+                            material.opacity = 1.0;
+                            material.emissive.setHex(0x222222);
+                        }
+                    });
+                } else if (selectedSlice.mesh.material) {
+                    selectedSlice.mesh.material.opacity = 1.0;
+                    selectedSlice.mesh.material.emissive.setHex(0x222222);
+                }
+            }
+        }
+        
+        function onPointerMove(event) {
+            if (!isDragging && !isZooming) return;
+            
+            // Handle two-finger zoom
+            if (event.touches && event.touches.length === 2 && isZooming) {
+                const currentDistance = getTouchDistance(event.touches);
+                const zoomDelta = (currentDistance - lastTouchDistance) * 0.01;
+                cameraDistance = Math.max(4, Math.min(15, cameraDistance - zoomDelta));
+                updateCameraPosition();
+                lastTouchDistance = currentDistance;
+                return;
+            }
+            
+            if (!isDragging) return;
+            
+            let clientX, clientY;
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+            
+            const deltaX = clientX - mouseStart.x;
+            const deltaY = clientY
