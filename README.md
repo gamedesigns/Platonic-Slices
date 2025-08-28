@@ -4,6 +4,8 @@ Platonic Slices experimental mobile puzzle game by Daniel Sandner
 [![Play Online](https://img.shields.io/badge/Play-Online-brightgreen?style=for-the-badge)](https://gamedesigns.github.io/Platonic-Slices)
 
 - v0.1.37 (index.html, v37 file in code/)
+- perpendicular and diagonal mechanics and geometry not yet implemented
+- sound system with cues not implemented
 
 **Fixed Problems:**
 - ✅ Touch controls work on mobile
